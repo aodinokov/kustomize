@@ -8,8 +8,9 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"sigs.k8s.io/kustomize/kyaml/fn/runtime/exec"
+	"sigs.k8s.io/kustomize/kyaml/fn/runtime/backend/exec"
 	"sigs.k8s.io/kustomize/kyaml/yaml"
+	"sigs.k8s.io/kustomize/kyaml/kio"
 )
 
 func TestFunctionFilter_Filter(t *testing.T) {
@@ -19,7 +20,7 @@ func TestFunctionFilter_Filter(t *testing.T) {
 		functionConfig string
 		expectedOutput []string
 		expectedError  string
-		instance       exec.Filter
+		instance       kio.Filter
 	}{
 		{
 			name: "exec_sed",
@@ -50,9 +51,13 @@ metadata:
 `,
 			},
 			expectedError: "",
-			instance: exec.Filter{
-				Path: "sed",
-				Args: []string{"s/Deployment/StatefulSet/g"},
+			instance: &exec.Filter{
+				Spec: &exec.Spec{
+					Exec: &exec.Exec{
+						Path: "sed",
+						Args: []string{"s/Deployment/StatefulSet/g"},
+					},
+				},
 			},
 		},
 	}
@@ -70,11 +75,15 @@ metadata:
 				inputs = append(inputs, node)
 			}
 			if tt.functionConfig != "" {
-				fc, err := yaml.Parse(tt.functionConfig)
+				var fbp exec.FunctionBackendProvider
+				fbc, err := fbp.UnmarshalAnnotation([]byte(tt.functionConfig))
 				if !assert.NoError(t, err) {
 					t.FailNow()
 				}
-				tt.instance.FunctionConfig = fc
+				tt.instance, err = fbc.NewFilter(nil, false, "", false)
+				if !assert.NoError(t, err) {
+					t.FailNow()
+				}
 			}
 
 			// run the function

@@ -13,6 +13,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"sigs.k8s.io/kustomize/kyaml/yaml"
+	"sigs.k8s.io/kustomize/kyaml/fn/runtime/backend"
 )
 
 type testRun struct {
@@ -54,7 +55,7 @@ func TestFunctionFilter_Filter(t *testing.T) {
 		expectedSavedError string
 		expectedResults    string
 		noMakeResultsFile  bool
-		instance           FunctionFilter
+		instance           backend.FunctionFilter
 	}{
 		// verify that resources emitted from the function have a file path defaulted
 		// if none already exists
@@ -350,7 +351,7 @@ metadata:
 		// exit error is saved, but the FunctionFilter does not return an error.
 		{
 			name:               "write_results_defer_failure",
-			instance:           FunctionFilter{DeferFailure: true},
+			instance:           backend.FunctionFilter{DeferFailure: true},
 			expectedSavedError: "failed",
 			run: testRun{
 				err: fmt.Errorf("failed"),
@@ -650,7 +651,7 @@ metadata:
 		// verify the functions can see all resources if global scope is set
 		{
 			name:     "scope_resources_global",
-			instance: FunctionFilter{GlobalScope: true},
+			instance: backend.FunctionFilter{GlobalScope: true},
 			run: testRun{
 				expectedInput: `apiVersion: config.kubernetes.io/v1alpha1
 kind: ResourceList
@@ -1059,7 +1060,7 @@ metadata:
 
 			// check for saved error
 			if tt.expectedSavedError != "" {
-				if !assert.EqualError(t, tt.instance.exit, tt.expectedSavedError) {
+				if !assert.EqualError(t, tt.instance.GetExit(), tt.expectedSavedError) {
 					t.FailNow()
 				}
 			}
@@ -1090,7 +1091,7 @@ metadata:
 			if len(tt.instance.ResultsFile) > 0 {
 				tt.expectedResults = strings.TrimSpace(tt.expectedResults)
 
-				results, err := tt.instance.results.String()
+				results, err := tt.instance.GetResults()
 				if !assert.NoError(t, err) {
 					t.FailNow()
 				}

@@ -1,7 +1,7 @@
 // Copyright 2019 The Kubernetes Authors.
 // SPDX-License-Identifier: Apache-2.0
 
-package runtimeutil
+package backend
 
 import (
 	"bytes"
@@ -53,6 +53,11 @@ type FunctionFilter struct {
 // GetExit returns the error from Run
 func (c FunctionFilter) GetExit() error {
 	return c.exit
+}
+
+// GetResults returns yaml as strings
+func (c FunctionFilter) GetResults() (string, error) {
+       return c.results.String()
 }
 
 // functionsDirectoryName is keyword directory name for functions scoped 1 directory higher
